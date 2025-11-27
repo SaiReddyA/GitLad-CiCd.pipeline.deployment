@@ -1,67 +1,82 @@
-stages:        
-  - build
-  - test
+stages:
   - deploy
 
-#  BUILD JOB
-build-job:      
-  stage: build
-  script:
-    - echo "Compiling the code..."
-    - mkdir build_output
-    - echo "Build files inside this folder" > build_output/result.txt
-    - echo "Compile complete."
-
-  #  Cache example (dependencies)
-  cache:
-    key: my-cache           # unique cache name
-    paths:
-      - build_output/       # normally node_modules, packages, etc.
-
-  #  Artifacts example (output for next jobs)
-  artifacts:
-    paths:
-      - build_output/       # this will be available for TEST + DEPLOY jobs
-    expire_in: 1 hour        # optional (default keeps forever)
-   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-      when: always
-
-#  UNIT TEST JOB
-unit-test-job:   
-  stage: test
-  needs: ["build-job"]      # to download artifacts
-  script:
-    - echo "Running unit tests... This will take about 60 seconds."
-    - sleep 60
-    - echo "Code coverage is 90%"
-    - ls -l build_output/   # showing artifact is available
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: always
-#  LINT TEST JOB
-lint-test-job:   
-  stage: test
-  needs: ["build-job"]      # get build-job's artifacts
-  script:
-    - echo "Linting code... This will take about 10 seconds."
-    - sleep 10
-    - echo "No lint issues found."
-    - ls -l build_output/   # artifact visible here also
-
- rules:
-    - if: '$CI_COMMIT_TAG'
-      when: never     # skip job on tags
-    - when: always     # run for all other cases
-
-#  DEPLOY JOB
-deploy-job:     
+deploy-static-site:
   stage: deploy
-  environment: production
-  needs: ["build-job"]      # get build output from artifacts
+  image: node:18
   script:
-    - echo "Deploying application..."
-    - ls -l build_output/   # verify artifacts passed till deploy
-    - echo "Application successfully deployed."
-rules:
-    - when: manual   # run by clicking “Play” button
+    - npm install -g netlify-cli
+    - netlify deploy --prod --dir=./ --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    
+# stages:        
+#   - build
+#   - test
+#   - deploy
+
+# #  BUILD JOB
+# build-job:      
+#   stage: build
+#   script:
+#     - echo "Compiling the code..."
+#     - mkdir build_output
+#     - echo "Build files inside this folder" > build_output/result.txt
+#     - echo "Compile complete."
+
+#   #  Cache example (dependencies)
+#   cache:
+#     key: my-cache           # unique cache name
+#     paths:
+#       - build_output/       # normally node_modules, packages, etc.
+
+#   #  Artifacts example (output for next jobs)
+#   artifacts:
+#     paths:
+#       - build_output/       # this will be available for TEST + DEPLOY jobs
+#     expire_in: 1 hour        # optional (default keeps forever)
+#    rules:
+#     - if: '$CI_COMMIT_BRANCH == "main"'
+#       when: always
+
+# #  UNIT TEST JOB
+# unit-test-job:   
+#   stage: test
+#   needs: ["build-job"]      # to download artifacts
+#   script:
+#     - echo "Running unit tests... This will take about 60 seconds."
+#     - sleep 60
+#     - echo "Code coverage is 90%"
+#     - ls -l build_output/   # showing artifact is available
+#   rules:
+#     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+#       when: always
+# #  LINT TEST JOB
+# lint-test-job:   
+#   stage: test
+#   needs: ["build-job"]      # get build-job's artifacts
+#   script:
+#     - echo "Linting code... This will take about 10 seconds."
+#     - sleep 10
+#     - echo "No lint issues found."
+#     - ls -l build_output/   # artifact visible here also
+
+#  rules:
+#     - if: '$CI_COMMIT_TAG'
+#       when: never     # skip job on tags
+#     - when: always     # run for all other cases
+
+# #  DEPLOY JOB
+# deploy-job:     
+#   stage: deploy
+#   environment: production
+#   needs: ["build-job"]      # get build output from artifacts
+#   script:
+#     - echo "Deploying application..."
+#     - ls -l build_output/   # verify artifacts passed till deploy
+#     - echo "Application successfully deployed."
+# rules:
+#     - when: manual   # run by clicking “Play” button
+
+
+
