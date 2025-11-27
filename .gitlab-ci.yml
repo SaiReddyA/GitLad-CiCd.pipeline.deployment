@@ -45,6 +45,7 @@ create-release-tag:
     - git config --global user.email "ci@gitlab.com"
     - git config --global user.name "GitLab CI"
     - export VERSION="v1.0.$CI_PIPELINE_IID"
+    - VERSION=$(date +%Y.%m.%d.%H%M)
     - echo "Creating release tag: $VERSION"
     - git tag $VERSION
     - git push origin $VERSION
