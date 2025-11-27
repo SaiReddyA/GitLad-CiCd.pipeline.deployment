@@ -1,17 +1,83 @@
 stages:
+  - build
+  - package
+  - release
   - deploy
+
+# -------------------------------------------
+# 1️⃣ BUILD JOB — prepare files
+# -------------------------------------------
+build-static-site:
+  stage: build
+  image: node:18
+  script:
+    - echo "Preparing static site..."
+    - mkdir build_output
+    - cp -r * build_output/
+    - echo "Build completed."
+  artifacts:
+    paths:
+      - build_output/
+    expire_in: 1 day
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+
+
+package-artifact:
+  stage: package
+  script:
+    - echo "Packaging build..."
+    - zip -r site-$CI_PIPELINE_IID.zip build_output/
+  needs: ["build-static-site"]
+  artifacts:
+    paths:
+      - site-$CI_PIPELINE_IID.zip
+    expire_in: 7 days
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+create-release-tag:
+  stage: release
+  script:
+    - git config --global user.email "ci@gitlab.com"
+    - git config --global user.name "GitLab CI"
+    - export VERSION="v1.0.$CI_PIPELINE_IID"
+    - echo "Creating release tag: $VERSION"
+    - git tag $VERSION
+    - git push origin $VERSION
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 deploy-static-site:
   stage: deploy
   image: node:18
   variables:
-    CI_DEBUG_TRACE: "true"
+    CI_DEBUG_TRACE: "true"     # enable debugging
   script:
     - npm install -g netlify-cli
-    - netlify deploy --prod --dir=./ --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
+    - echo "Deploying version v1.0.$CI_PIPELINE_IID"
+    - netlify deploy --prod --dir=build_output/ --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
+  needs: ["build-static-site"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
+##########################V2###########################################
+# stages:
+#   - deploy
+
+# deploy-static-site:
+#   stage: deploy
+#   image: node:18
+#   variables:
+#     CI_DEBUG_TRACE: "true"
+#   script:
+#     - npm install -g netlify-cli
+#     - netlify deploy --prod --dir=./ --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "main"'
+
+#v1##########################################################
 # stages:        
 #   - build
 #   - test
