@@ -3,9 +3,9 @@ stages:
 
 deploy-static-site:
   stage: deploy
-  variables:
-  CI_DEBUG_TRACE: "true"
   image: node:18
+  variables:
+    CI_DEBUG_TRACE: "true"
   script:
     - npm install -g netlify-cli
     - netlify deploy --prod --dir=./ --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
