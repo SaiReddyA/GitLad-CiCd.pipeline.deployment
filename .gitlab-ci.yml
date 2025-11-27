@@ -10,6 +10,8 @@ stages:
 build-static-site:
   stage: build
   image: node:18
+  variables:
+    VERSION: "1.0.0"
   script:
     - echo "Preparing static site..."
     - mkdir build_output
